@@ -10,7 +10,7 @@ require the same standard. This triggered a formal enforcement action.
 ## Official Sources
 
 POPIA Full Text
-https://www.justice.gov.za/inforeg/docs/InfoRegSA-POPIA-act4of2013.pdf
+https://www.gov.za/sites/default/files/gcis_document/201409/3706726-11act4of2013protectionofpersonalinforcorrect.pdf
 
 Information Regulator South Africa
 https://inforegulator.org.za
