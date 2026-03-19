@@ -53,6 +53,8 @@ Runs 8 POPIA checks and 10 GDPR checks against real law references.
 Scores each framework separately and gives an overall compliance rating.
 Lists every failed control with the specific section or article number.
 
+---
+
 ## Compliance Score Guide
 
 | Score | Rating |
@@ -62,5 +64,38 @@ Lists every failed control with the specific section or article number.
 | 50 to 69 percent | Non-Compliant High Risk |
 | 0 to 49 percent | Non-Compliant Critical Risk |
 
+---
+
+## Frameworks Covered
+
+| Framework | Checks | Law Reference |
+|-----------|--------|---------------|
+| POPIA | 8 checks | Sections 9, 11, 19, 22, 23, 24, 55, 72 |
+| GDPR | 10 checks | Articles 5, 6, 7, 13, 17, 25, 32, 33, 35, 37 |
+
+---
+
 ## How to Run
-```bash
+
+pip install -r requirements.txt
+
+python tracker/report.py
+
+---
+
+## Official References
+
+POPIA Full Text
+https://www.justice.gov.za/inforeg/docs/InfoRegSA-POPIA-act4of2013.pdf
+
+Information Regulator South Africa
+https://inforegulator.org.za
+
+WhatsApp Enforcement Notice Analysis
+https://www.michalsons.com/blog/whatsapp-enforcement-notice-popia-breaches/77829
+
+GDPR Overview
+https://gdpr.eu/what-is-gdpr/
+
+Related Project GRC Controls Lab
+https://github.com/Scottie222/GRC-Controls-Lab
