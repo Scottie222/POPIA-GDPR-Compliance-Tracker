@@ -151,13 +151,13 @@ To assess a different organisation, edit the response dictionaries in `run_asses
 ## Project structure
 POPIA-GDPR-Compliance-Tracker/
 ├── tracker/
-│   ├── checks.py       # POPIA and GDPR check definitions 18 controls
-│   ├── report.py       # Assessment runner, scoring and gap analysis
-│   └── visualise.py    # Chart generation 3 PNG outputs
-├── tests/              # Unit tests for scoring engine
-├── outputs/            # Generated PNG charts
-├── run_assessment.py   # Single command runs assessment and charts
-├── CASE-STUDY.md       # WhatsApp enforcement deep dive
+│   ├── checks.py       
+│   ├── report.py       
+│   └── visualise.py    
+├── tests/              
+├── outputs/            
+├── run_assessment.py   
+├── CASE-STUDY.md      
 ├── requirements.txt
 └── README.md
 
