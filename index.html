@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>POPIA / GDPR Compliance Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f6fa;--surface:#ffffff;--panel:#f0f2f8;
+  --border:#e2e6ef;--border2:#d0d5e8;
+  --text:#1a1f36;--muted:#6b7694;--subtle:#9ba3bc;
+  --red:#e53e3e;--red-bg:#fff5f5;--red-border:#fed7d7;
+  --orange:#d97706;--orange-bg:#fffbeb;--orange-border:#fde68a;
+  --green:#16a34a;--green-bg:#f0fdf4;--green-border:#bbf7d0;
+  --blue:#2563eb;--blue-bg:#eff6ff;--blue-border:#bfdbfe;
+  --yellow:#b45309;--yellow-bg:#fefce8;--yellow-border:#fef08a;
+  --mono:'IBM Plex Mono',monospace;--sans:'Inter',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;}
+.page-header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+.ph-logo{font-family:var(--mono);font-size:12px;letter-spacing:2px;color:var(--blue);font-weight:600;}
+.ph-right{display:flex;align-items:center;gap:12px;}
+.ph-badge{font-family:var(--mono);font-size:10px;padding:3px 10px;border-radius:4px;letter-spacing:1px;}
+.ph-badge.popia{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-border);}
+.ph-badge.gdpr{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border);}
+.hero{background:var(--surface);border-bottom:1px solid var(--border);padding:40px 32px 32px;}
+.hero-tag{font-family:var(--mono);font-size:10px;letter-spacing:3px;color:var(--blue);margin-bottom:12px;}
+.hero-title{font-size:clamp(22px,3vw,36px);font-weight:600;line-height:1.2;margin-bottom:10px;color:var(--text);}
+.hero-title em{font-style:normal;color:var(--red);}
+.hero-sub{font-size:14px;color:var(--muted);line-height:1.7;max-width:640px;margin-bottom:24px;}
+.hero-stats{display:flex;gap:24px;flex-wrap:wrap;}
+.hs{background:var(--panel);border:1px solid var(--border);padding:14px 20px;border-radius:8px;}
+.hs .v{font-family:var(--mono);font-size:22px;font-weight:600;line-height:1;}
+.hs .l{font-size:11px;color:var(--muted);letter-spacing:1px;margin-top:4px;}
+.tabs{background:var(--surface);border-bottom:1px solid var(--border);padding:0 32px;display:flex;overflow-x:auto;}
+.tab-btn{background:none;border:none;color:var(--muted);font-family:var(--sans);font-size:13px;font-weight:500;padding:14px 18px;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .2s;}
+.tab-btn:hover{color:var(--text);}
+.tab-btn.active{color:var(--blue);border-bottom-color:var(--blue);}
+.content{padding:24px 32px;max-width:1200px;margin:0 auto;}
+.tab-pane{display:none;}
+.tab-pane.active{display:block;}
+.section-label{font-family:var(--mono);font-size:10px;letter-spacing:3px;color:var(--blue);margin-bottom:16px;padding-bottom:8px;border-bottom:2px solid var(--border);}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+@media(max-width:768px){.g2,.g3,.g4{grid-template-columns:1fr;}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px;}
+.ctitle{font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--muted);margin-bottom:14px;}
+.metric-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;}
+.metric-card .num{font-family:var(--mono);font-size:28px;font-weight:600;line-height:1;}
+.metric-card .lbl{font-size:11px;color:var(--muted);margin-top:5px;letter-spacing:1px;}
+.metric-card .sub{font-size:11px;margin-top:6px;}
+
+/* score ring */
+.score-ring-wrap{display:flex;flex-direction:column;align-items:center;padding:20px 0;}
+.score-ring{position:relative;width:120px;height:120px;}
+.score-ring svg{transform:rotate(-90deg);}
+.score-ring-val{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.score-ring-val .pct{font-family:var(--mono);font-size:24px;font-weight:600;}
+.score-ring-val .lab{font-size:10px;color:var(--muted);letter-spacing:1px;}
+
+/* compliance toggle */
+.ctrl-item{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);}
+.ctrl-item:last-child{border-bottom:none;}
+.toggle{position:relative;width:40px;height:22px;flex-shrink:0;margin-top:1px;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-slider{position:absolute;inset:0;background:#d1d5db;border-radius:11px;cursor:pointer;transition:background .2s;}
+.toggle-slider:before{content:'';position:absolute;width:16px;height:16px;left:3px;top:3px;background:white;border-radius:50%;transition:transform .2s;}
+.toggle input:checked + .toggle-slider{background:var(--green);}
+.toggle input:checked + .toggle-slider:before{transform:translateX(18px);}
+.ctrl-body{flex:1;}
+.ctrl-ref{font-family:var(--mono);font-size:10px;color:var(--blue);margin-bottom:3px;}
+.ctrl-title{font-size:13px;font-weight:500;color:var(--text);margin-bottom:3px;}
+.ctrl-desc{font-size:12px;color:var(--muted);line-height:1.5;}
+.ctrl-status{font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:3px;flex-shrink:0;margin-top:2px;}
+.st-pass{background:var(--green-bg);color:var(--green);}
+.st-fail{background:var(--red-bg);color:var(--red);}
+
+/* score bar */
+.score-bar-wrap{margin-bottom:12px;}
+.score-bar-label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px;}
+.score-bar-label span{font-family:var(--mono);font-weight:500;}
+.score-bar{height:10px;background:var(--border);border-radius:5px;overflow:hidden;}
+.score-bar-fill{height:100%;border-radius:5px;transition:width .5s ease;}
+
+/* violation card */
+.violation{background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--red);border-radius:0 8px 8px 0;padding:14px 16px;margin-bottom:10px;}
+.violation.warn{border-left-color:var(--orange);}
+.violation.pass{border-left-color:var(--green);}
+.vio-ref{font-family:var(--mono);font-size:10px;color:var(--red);margin-bottom:4px;}
+.violation.warn .vio-ref{color:var(--orange);}
+.violation.pass .vio-ref{color:var(--green);}
+.vio-title{font-size:13px;font-weight:500;margin-bottom:4px;}
+.vio-desc{font-size:12px;color:var(--muted);line-height:1.5;}
+
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;padding:10px 12px;font-size:11px;font-weight:600;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap;background:var(--panel);}
+td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top;}
+tr:hover td{background:var(--panel);}
+
+.timeline-item{display:flex;gap:16px;margin-bottom:16px;}
+.tl-date{font-family:var(--mono);font-size:11px;color:var(--muted);width:100px;flex-shrink:0;padding-top:2px;}
+.tl-dot-wrap{display:flex;flex-direction:column;align-items:center;gap:0;}
+.tl-dot2{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.tl-line{width:1px;flex:1;background:var(--border);min-height:20px;}
+.tl-body{flex:1;padding-bottom:4px;}
+.tl-title2{font-size:13px;font-weight:500;margin-bottom:3px;}
+.tl-desc2{font-size:12px;color:var(--muted);line-height:1.5;}
+
+.badge{display:inline-block;font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:3px;font-weight:600;}
+.b-crit{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border);}
+.b-high{background:var(--orange-bg);color:var(--orange);border:1px solid var(--orange-border);}
+.b-med{background:var(--yellow-bg);color:var(--yellow);border:1px solid var(--yellow-border);}
+.b-pass{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border);}
+
+footer{border-top:1px solid var(--border);padding:16px 32px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-top:40px;background:var(--surface);}
+footer div{font-family:var(--mono);font-size:10px;color:var(--muted);}
+footer a{color:var(--blue);text-decoration:none;}
+</style>
+</head>
+<body>
+
+<header class="page-header">
+  <div class="ph-logo">POPIA / GDPR COMPLIANCE TRACKER</div>
+  <div class="ph-right">
+    <span class="ph-badge popia">POPIA ACT 4 OF 2013</span>
+    <span class="ph-badge gdpr">GDPR 2016/679</span>
+    <span style="font-family:var(--mono);font-size:10px;color:var(--muted);" id="clock"></span>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-tag">WHATSAPP ENFORCEMENT 2024 · SA INFORMATION REGULATOR · DUAL FRAMEWORK</div>
+  <h1 class="hero-title">POPIA / GDPR compliance tracker<br><em>WhatsApp enforcement case study</em></h1>
+  <p class="hero-sub">Interactive compliance tracker built around the 2024 WhatsApp enforcement action — the first major tech enforcement under POPIA. Toggle controls on or off to see live compliance scores update. A company can be GDPR-compliant in Europe and still violate POPIA in South Africa.</p>
+  <div class="hero-stats">
+    <div class="hs"><div class="v" style="color:var(--red)">25%</div><div class="l">WHATSAPP POPIA SCORE</div></div>
+    <div class="hs"><div class="v" style="color:var(--red)">30%</div><div class="l">WHATSAPP GDPR SCORE</div></div>
+    <div class="hs"><div class="v" style="color:var(--orange)">7</div><div class="l">POPIA VIOLATIONS</div></div>
+    <div class="hs"><div class="v" style="color:var(--blue)">R10M</div><div class="l">MAX FINE</div></div>
+  </div>
+</section>
+
+<nav class="tabs">
+  <button class="tab-btn active" onclick="showTab('tracker',this)">LIVE TRACKER</button>
+  <button class="tab-btn" onclick="showTab('casestudy',this)">CASE STUDY</button>
+  <button class="tab-btn" onclick="showTab('popia',this)">POPIA CONTROLS</button>
+  <button class="tab-btn" onclick="showTab('gdpr',this)">GDPR CONTROLS</button>
+  <button class="tab-btn" onclick="showTab('compare',this)">COMPARISON</button>
+  <button class="tab-btn" onclick="showTab('penalties',this)">PENALTIES</button>
+</nav>
+
+<div class="content">
+
+<!-- LIVE TRACKER -->
+<div id="tracker" class="tab-pane active">
+  <div class="section-label">INTERACTIVE COMPLIANCE SCORER — TOGGLE CONTROLS TO UPDATE SCORES</div>
+
+  <div class="g2" style="margin-bottom:20px;">
+    <!-- POPIA score -->
+    <div class="card">
+      <div class="ctitle">POPIA COMPLIANCE SCORE</div>
+      <div class="score-ring-wrap">
+        <div class="score-ring">
+          <svg width="120" height="120" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="50" fill="none" stroke="#e2e6ef" stroke-width="10"/>
+            <circle cx="60" cy="60" r="50" fill="none" stroke="#e53e3e" stroke-width="10" stroke-dasharray="314" id="popiaArc" stroke-dashoffset="236" stroke-linecap="round"/>
+          </svg>
+          <div class="score-ring-val">
+            <span class="pct" id="popiaScoreVal" style="color:var(--red)">25%</span>
+            <span class="lab">POPIA</span>
+          </div>
+        </div>
+        <div style="margin-top:10px;text-align:center;">
+          <div style="font-size:13px;font-weight:500;" id="popiaRatingLabel">Non-Compliant — Critical Risk</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:3px;font-family:var(--mono);" id="popiaPassCount">2 / 8 passed</div>
+        </div>
+      </div>
+      <div class="score-bar-wrap">
+        <div class="score-bar"><div class="score-bar-fill" id="popiaBar" style="width:25%;background:var(--red)"></div></div>
+      </div>
+    </div>
+
+    <!-- GDPR score -->
+    <div class="card">
+      <div class="ctitle">GDPR COMPLIANCE SCORE</div>
+      <div class="score-ring-wrap">
+        <div class="score-ring">
+          <svg width="120" height="120" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="50" fill="none" stroke="#e2e6ef" stroke-width="10"/>
+            <circle cx="60" cy="60" r="50" fill="none" stroke="#e53e3e" stroke-width="10" stroke-dasharray="314" id="gdprArc" stroke-dashoffset="220" stroke-linecap="round"/>
+          </svg>
+          <div class="score-ring-val">
+            <span class="pct" id="gdprScoreVal" style="color:var(--red)">30%</span>
+            <span class="lab">GDPR</span>
+          </div>
+        </div>
+        <div style="margin-top:10px;text-align:center;">
+          <div style="font-size:13px;font-weight:500;" id="gdprRatingLabel">Non-Compliant — Critical Risk</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:3px;font-family:var(--mono);" id="gdprPassCount">3 / 10 passed</div>
+        </div>
+      </div>
+      <div class="score-bar-wrap">
+        <div class="score-bar"><div class="score-bar-fill" id="gdprBar" style="width:30%;background:var(--red)"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- overall -->
+  <div class="card" style="margin-bottom:20px;">
+    <div class="ctitle">OVERALL COMPLIANCE SCORE</div>
+    <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+      <div style="font-family:var(--mono);font-size:48px;font-weight:600;" id="overallScore" style="color:var(--red)">27.5%</div>
+      <div style="flex:1;">
+        <div style="font-size:14px;font-weight:500;margin-bottom:6px;" id="overallLabel">Non-Compliant — Critical Risk</div>
+        <div class="score-bar" style="height:14px;"><div class="score-bar-fill" id="overallBar" style="width:27.5%;background:var(--red);height:14px;"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:4px;font-family:var(--mono);">
+          <span>0% Critical</span><span>50% High Risk</span><span>70% Partial</span><span>90% Compliant</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- POPIA toggles -->
+  <div class="g2">
+    <div class="card">
+      <div class="ctitle">POPIA CONTROLS — TOGGLE TO MARK COMPLIANT</div>
+      <div id="popiaToggles"></div>
+    </div>
+    <div class="card">
+      <div class="ctitle">GDPR CONTROLS — TOGGLE TO MARK COMPLIANT</div>
+      <div id="gdprToggles"></div>
+    </div>
+  </div>
+</div>
+
+<!-- CASE STUDY -->
+<div id="casestudy" class="tab-pane">
+  <div class="section-label">WHATSAPP ENFORCEMENT 2024 — FIRST MAJOR POPIA ENFORCEMENT ACTION</div>
+  <div class="g2">
+    <div class="card">
+      <div class="ctitle">ENFORCEMENT TIMELINE</div>
+      <div id="enfTimeline"></div>
+    </div>
+    <div class="card">
+      <div class="ctitle">WHAT WHATSAPP DID WRONG</div>
+      <div id="violations"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ctitle">KEY LESSON — THE POPIA / GDPR GAP</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);">
+      <div style="background:var(--surface);padding:18px;">
+        <div style="font-family:var(--mono);font-size:12px;color:var(--green);margin-bottom:8px;">GDPR (EUROPE) — COMPLIANT</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.7;">WhatsApp applied full GDPR protections to European users. Transparent consent mechanisms. Clear data processing notices. Right to erasure implemented. Data minimisation enforced.</div>
+      </div>
+      <div style="background:var(--surface);padding:18px;">
+        <div style="font-family:var(--mono);font-size:12px;color:var(--red);margin-bottom:8px;">POPIA (SOUTH AFRICA) — NON-COMPLIANT</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.7;">The exact same protections were NOT applied to SA users. Weaker consent. No PAIA manual. No Information Officer. No Personal Information Impact Assessment. POPIA requires the same standard as GDPR — WhatsApp assumed it didn't.</div>
+      </div>
+    </div>
+    <div style="padding:16px;background:var(--blue-bg);border-top:1px solid var(--blue-border);font-size:13px;color:var(--blue);line-height:1.7;">
+      <strong>The gap this tracker detects:</strong> An organisation can score 80%+ on GDPR and still be critically non-compliant under POPIA. Local compliance is not automatic. This tracker scores both frameworks independently and highlights exactly where the gaps are.
+    </div>
+  </div>
+</div>
+
+<!-- POPIA CONTROLS -->
+<div id="popia" class="tab-pane">
+  <div class="section-label">POPIA ACT 4 OF 2013 — ALL 8 COMPLIANCE CONTROLS</div>
+  <div class="card">
+    <table>
+      <thead><tr><th>SECTION</th><th>REQUIREMENT</th><th>DESCRIPTION</th><th>WHATSAPP STATUS</th><th>PENALTY RISK</th></tr></thead>
+      <tbody>
+        <tr><td style="font-family:var(--mono);color:var(--blue);font-size:12px;">S.8</td><td style="font-weight:500;">Lawful processing</td><td style="font-size:12px;color:var(--muted);">Must have a lawful basis for processing personal information</td><td><span class="badge b-crit">FAILED</span></td><td style="font-size:12px;color:var(--muted);">Administrative fine</td></tr>
+        <tr><td style="font-family:var(--mono);color:var(--blue);font-size:12px;">S.9</td><td style="font-weight:500;">Processing limitation</td><td style="font-size:12px;color:var(--muted);">Only collect minimum data necessary for the stated purpose</td><td><span class="badge b-crit">FAILED</span></td><td style="font-size:12px;color:var(--muted);">Administrative fine</td></tr>
+        <tr><td style="font-family:var(--mono);color:var(--blue);font-size:12px;">S.11</td><td style="font-weight:500;">Consent</td><td style="font-size:12px;color:var(--muted);">Consent must be voluntary, specific and informed</td><td><span class="badge b-crit">FAILED</span></td><td style="font-size:12px;color:var(--muted);">Criminal liability</td></tr>
+        <tr><td style="font-family:var(--mono);color:var(--blue);font-size:12px;">S.13</td><td style="font-weight:500;">Purpose specification</td><td style="font-size:12px;color:var(--muted);">Must clearly state why personal information is being collected</td><td><span class="badge b-crit">FAILED</span></td><td style="font-size:12px;color:var(--muted);">Compliance order</td></tr>
+        <tr><td style="font-family:var(--mono);color:var(--blue);font-size:12px;">S.15</td><td style="font-weight:500;">Further processing</td><td style="font-size:12px;color:var(--muted);">Cannot use data for new purposes without fresh consent</td><td><span class="badge b-crit">FAILED</span></td><td style="font-size:12px;color:var(--muted);">Administrative fine</td></tr>
+        <tr><td style="font-family:var(--mono);color:var(--blue);font-size:12px;">S.17</td><td style="font-weight:500;">Openness</td><td style="font-size:12px;color:var(--muted);">Must maintain records of all processing activities</td><td><span class="badge b-crit">FAILED</span></td><td style="font-size:12px;color:var(--muted);">Compliance order</td></tr>
+        <tr><td style="font-family:var(--mono);color:var(--blue);font-size:12px;">S.19</td><td style="font-weight:500;">Security safeguards</td><td style="font-size:12px;color:var(--muted);">Must implement appropriate technical and organisational measures</td><td><span class="badge b-crit">FAILED</span></td><td style="font-size:12px;color:var(--muted);">All penalties</td></tr>
+        <tr><td style="font-family:var(--mono);color:var(--blue);font-size:12px;">S.55</td><td style="font-weight:500;">Information Officer</td><td style="font-size:12px;color:var(--muted);">Must appoint an Information Officer registered with the Regulator</td><td><span class="badge b-high">PARTIAL</span></td><td style="font-size:12px;color:var(--muted);">Compliance order</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- GDPR CONTROLS -->
+<div id="gdpr" class="tab-pane">
+  <div class="section-label">GDPR 2016/679 — ALL 10 COMPLIANCE CONTROLS</div>
+  <div class="card">
+    <table>
+      <thead><tr><th>ARTICLE</th><th>REQUIREMENT</th><th>DESCRIPTION</th><th>WHATSAPP STATUS</th></tr></thead>
+      <tbody>
+        <tr><td style="font-family:var(--mono);color:var(--blue);font-size:12px;">Art.5</td><td style="font-weight:500;">Data processing principles</td><td style="font-size:12px;color:var(--muted);">Lawfulness, fairness, transparency, purpose limitation, minimisation, accuracy, storage limitation</td><td><span class="badge b-pass">PASS (EU)</span></td></tr>
+        <tr><td style="font-family:var(--mono);color:var(--blue);font-size:12px;">Art.6</td><td style="font-weight:500;">Lawful basis</td><td style="font-size:12px;color:var(--muted);">One of six lawful bases must be identified before processing</td><td><span class="badge b-pass">PASS (EU)</span></td></tr>
+        <tr><td style="font-family:var(--mono);color:var(--blue);font-size:12px;">Art.7</td><td style="font-weight:500;">Conditions for consent</td><td style="font-size:12px;color:var(--muted);">Consent must be freely given, specific, informed and unambiguous</td><td><span class="badge b-pass">PASS (EU)</span></td></tr>
+        <tr><td style="font-family:var(--mono);color:var(--blue);font-size:12px;">Art.13</td><td style="font-weight:500;">Transparency notice</td><td style="font-size:12px;color:var(--muted);">Must provide full privacy notice at time of data collection</td><td><span class="badge b-crit">FAILED (SA)</span></td></tr>
+        <tr><td style="font-family:var(--mono);color:var(--blue);font-size:12px;">Art.17</td><td style="font-weight:500;">Right to erasure</td><td style="font-size:12px;color:var(--muted);">Data subjects can request deletion of their personal data</td><td><span class="badge b-high">PARTIAL</span></td></tr>
+        <tr><td style="font-family:var(--mono);color:var(--blue);font-size:12px;">Art.25</td><td style="font-weight:500;">Privacy by design</td><td style="font-size:12px;color:var(--muted);">Data protection must be built in from the start, not added later</td><td><span class="badge b-high">PARTIAL</span></td></tr>
+        <tr><td style="font-family:var(--mono);color:var(--blue);font-size:12px;">Art.32</td><td style="font-weight:500;">Security of processing</td><td style="font-size:12px;color:var(--muted);">Implement appropriate technical and organisational security measures</td><td><span class="badge b-crit">FAILED (SA)</span></td></tr>
+        <tr><td style="font-family:var(--mono);color:var(--blue);font-size:12px;">Art.33</td><td style="font-weight:500;">Breach notification</td><td style="font-size:12px;color:var(--muted);">Must notify supervisory authority within 72 hours of breach discovery</td><td><span class="badge b-crit">FAILED (SA)</span></td></tr>
+        <tr><td style="font-family:var(--mono);color:var(--blue);font-size:12px;">Art.35</td><td style="font-weight:500;">Data Protection Impact Assessment</td><td style="font-size:12px;color:var(--muted);">Required for high-risk processing activities before they begin</td><td><span class="badge b-crit">FAILED (SA)</span></td></tr>
+        <tr><td style="font-family:var(--mono);color:var(--blue);font-size:12px;">Art.37</td><td style="font-weight:500;">Data Protection Officer</td><td style="font-size:12px;color:var(--muted);">Must appoint DPO for large-scale processing of personal data</td><td><span class="badge b-high">PARTIAL</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- COMPARISON -->
+<div id="compare" class="tab-pane">
+  <div class="section-label">POPIA vs GDPR — SIDE BY SIDE COMPARISON</div>
+  <div class="card">
+    <table>
+      <thead><tr><th>ELEMENT</th><th>POPIA (SA)</th><th>GDPR (EU)</th><th>KEY DIFFERENCE</th></tr></thead>
+      <tbody>
+        <tr><td style="font-weight:500;">Regulator</td><td style="font-size:12px;">Information Regulator SA</td><td style="font-size:12px;">National DPAs (e.g. ICO, CNIL)</td><td style="font-size:12px;color:var(--muted);">SA has single national regulator</td></tr>
+        <tr><td style="font-weight:500;">Max fine</td><td style="font-size:12px;font-family:var(--mono);color:var(--red);">R10 million or 10%</td><td style="font-size:12px;font-family:var(--mono);color:var(--red);">€20M or 4% global turnover</td><td style="font-size:12px;color:var(--muted);">GDPR fines significantly higher</td></tr>
+        <tr><td style="font-weight:500;">Criminal liability</td><td style="font-size:12px;">Up to 10 years imprisonment</td><td style="font-size:12px;">Member state laws vary</td><td style="font-size:12px;color:var(--muted);">POPIA has stronger criminal sanctions</td></tr>
+        <tr><td style="font-weight:500;">Consent standard</td><td style="font-size:12px;">Voluntary, specific, informed</td><td style="font-size:12px;">Freely given, specific, informed, unambiguous</td><td style="font-size:12px;color:var(--muted);">Effectively equivalent</td></tr>
+        <tr><td style="font-weight:500;">Breach notification</td><td style="font-size:12px;">ASAP to Regulator and subjects</td><td style="font-size:12px;">72 hours to supervisory authority</td><td style="font-size:12px;color:var(--muted);">GDPR has explicit 72hr window</td></tr>
+        <tr><td style="font-weight:500;">Data officer</td><td style="font-size:12px;">Information Officer (mandatory)</td><td style="font-size:12px;">DPO (required for high-risk)</td><td style="font-size:12px;color:var(--muted);">POPIA requires IO for ALL organisations</td></tr>
+        <tr><td style="font-weight:500;">Impact assessment</td><td style="font-size:12px;">PIIA (Personal Information Impact Assessment)</td><td style="font-size:12px;">DPIA (Data Protection Impact Assessment)</td><td style="font-size:12px;color:var(--muted);">Effectively equivalent requirement</td></tr>
+        <tr><td style="font-weight:500;">Cross-border transfers</td><td style="font-size:12px;">Section 72 — adequacy requirement</td><td style="font-size:12px;">Chapter V — adequacy decisions</td><td style="font-size:12px;color:var(--muted);">Similar mechanisms, SA list developing</td></tr>
+        <tr><td style="font-weight:500;">Right to erasure</td><td style="font-size:12px;">Section 24 — correction/deletion</td><td style="font-size:12px;">Article 17 — right to erasure</td><td style="font-size:12px;color:var(--muted);">GDPR right is broader and more explicit</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- PENALTIES -->
+<div id="penalties" class="tab-pane">
+  <div class="section-label">PENALTY FRAMEWORK — POPIA ENFORCEMENT</div>
+  <div class="g3">
+    <div class="card" style="border-top:3px solid var(--red);">
+      <div class="ctitle">ADMINISTRATIVE FINES</div>
+      <div style="font-family:var(--mono);font-size:28px;font-weight:600;color:var(--red);margin-bottom:8px;">R10M</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.7;">Maximum administrative fine per violation. Can be issued by the Information Regulator without criminal prosecution. Applies to organisations of any size operating in SA.</div>
+    </div>
+    <div class="card" style="border-top:3px solid var(--orange);">
+      <div class="ctitle">CRIMINAL LIABILITY</div>
+      <div style="font-family:var(--mono);font-size:28px;font-weight:600;color:var(--orange);margin-bottom:8px;">10 YRS</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.7;">Maximum imprisonment for egregious POPIA violations. Applies to responsible parties and Information Officers personally. Significantly stronger than most data protection regimes globally.</div>
+    </div>
+    <div class="card" style="border-top:3px solid var(--blue);">
+      <div class="ctitle">COMPLIANCE ORDERS</div>
+      <div style="font-family:var(--mono);font-size:28px;font-weight:600;color:var(--blue);margin-bottom:8px;">60 DAYS</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.7;">Deadline to submit compliance report after enforcement notice. Failure to comply escalates to criminal prosecution. WhatsApp was given 60 days from the September 2024 enforcement notice.</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ctitle">WHATSAPP ENFORCEMENT NOTICE — REQUIRED ACTIONS</div>
+    <table>
+      <thead><tr><th>ACTION REQUIRED</th><th>POPIA SECTION</th><th>DEADLINE</th><th>STATUS</th></tr></thead>
+      <tbody>
+        <tr><td>Appoint Information Officer registered with Regulator</td><td style="font-family:var(--mono);font-size:11px;color:var(--blue);">S.55</td><td style="font-family:var(--mono);font-size:11px;">Nov 2024</td><td><span class="badge b-high">PENDING</span></td></tr>
+        <tr><td>Update privacy notice for SA users to POPIA standard</td><td style="font-family:var(--mono);font-size:11px;color:var(--blue);">S.13</td><td style="font-family:var(--mono);font-size:11px;">Nov 2024</td><td><span class="badge b-high">PENDING</span></td></tr>
+        <tr><td>Make consent voluntary and specific for SA users</td><td style="font-family:var(--mono);font-size:11px;color:var(--blue);">S.11</td><td style="font-family:var(--mono);font-size:11px;">Nov 2024</td><td><span class="badge b-high">PENDING</span></td></tr>
+        <tr><td>Conduct Personal Information Impact Assessment</td><td style="font-family:var(--mono);font-size:11px;color:var(--blue);">S.19</td><td style="font-family:var(--mono);font-size:11px;">Nov 2024</td><td><span class="badge b-high">PENDING</span></td></tr>
+        <tr><td>Restrict cross-border data transfers to adequate countries</td><td style="font-family:var(--mono);font-size:11px;color:var(--blue);">S.72</td><td style="font-family:var(--mono);font-size:11px;">Nov 2024</td><td><span class="badge b-high">PENDING</span></td></tr>
+        <tr><td>Submit compliance report to Information Regulator</td><td style="font-family:var(--mono);font-size:11px;color:var(--blue);">Cl.6</td><td style="font-family:var(--mono);font-size:11px;">Nov 2024</td><td><span class="badge b-high">PENDING</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</div>
+
+<footer>
+  <div>POPIA / GDPR COMPLIANCE TRACKER · WHATSAPP ENFORCEMENT 2024 · SA INFORMATION REGULATOR</div>
+  <div><a href="https://github.com/Scottie222">github.com/Scottie222</a> &nbsp;·&nbsp; <a href="https://www.linkedin.com/in/bakithi-scott-ngcampalala-0051a4105">LinkedIn</a></div>
+</footer>
+
+<script>
+function tick(){
+  var n=new Date();
+  var el=document.getElementById('clock');
+  if(el) el.textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+':'+String(n.getSeconds()).padStart(2,'0');
+}
+setInterval(tick,1000);tick();
+
+function showTab(id,btn){
+  document.querySelectorAll('.tab-pane').forEach(function(t){t.classList.remove('active');});
+  document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+
+var POPIA_CONTROLS=[
+  {ref:'S.8',title:'Lawful basis for processing',desc:'Demonstrate a lawful basis before processing any personal information.',passed:false},
+  {ref:'S.9',title:'Data minimisation',desc:'Only collect the minimum personal information necessary for the stated purpose.',passed:false},
+  {ref:'S.11',title:'Voluntary and informed consent',desc:'Obtain consent that is freely given, specific, and clearly explained.',passed:false},
+  {ref:'S.13',title:'Purpose specification',desc:'Clearly state the purpose of data collection at the time of collection.',passed:false},
+  {ref:'S.15',title:'No further processing',desc:'Do not use personal information for new purposes without additional consent.',passed:false},
+  {ref:'S.17',title:'Records of processing activities',desc:'Maintain complete and up-to-date records of all processing activities.',passed:false},
+  {ref:'S.19',title:'Security safeguards',desc:'Implement appropriate technical and organisational security measures.',passed:true},
+  {ref:'S.55',title:'Information Officer appointed',desc:'Appoint and register an Information Officer with the Information Regulator.',passed:true}
+];
+
+var GDPR_CONTROLS=[
+  {ref:'Art.5',title:'Data processing principles',desc:'Lawfulness, fairness, transparency, purpose limitation, minimisation, accuracy, storage limitation.',passed:true},
+  {ref:'Art.6',title:'Lawful basis identified',desc:'One of six lawful bases documented before any processing begins.',passed:true},
+  {ref:'Art.7',title:'Valid consent obtained',desc:'Freely given, specific, informed and unambiguous consent obtained.',passed:true},
+  {ref:'Art.13',title:'Transparency notice provided',desc:'Full privacy notice provided at the time of data collection.',passed:false},
+  {ref:'Art.17',title:'Right to erasure implemented',desc:'Data subjects can request deletion and requests are fulfilled.',passed:false},
+  {ref:'Art.25',title:'Privacy by design',desc:'Data protection built into systems and processes from the start.',passed:false},
+  {ref:'Art.32',title:'Security of processing',desc:'Appropriate technical and organisational security measures implemented.',passed:false},
+  {ref:'Art.33',title:'72-hour breach notification',desc:'Supervisory authority notified within 72 hours of breach discovery.',passed:false},
+  {ref:'Art.35',title:'Data Protection Impact Assessment',desc:'DPIA conducted for all high-risk processing activities.',passed:false},
+  {ref:'Art.37',title:'Data Protection Officer appointed',desc:'DPO appointed for large-scale processing of personal data.',passed:false}
+];
+
+function getScoreColor(pct){
+  if(pct>=90) return 'var(--green)';
+  if(pct>=70) return '#16a34a';
+  if(pct>=50) return 'var(--orange)';
+  return 'var(--red)';
+}
+function getRating(pct){
+  if(pct>=90) return 'Compliant';
+  if(pct>=70) return 'Partially Compliant';
+  if(pct>=50) return 'Non-Compliant — High Risk';
+  return 'Non-Compliant — Critical Risk';
+}
+
+function updateScores(){
+  var pPass=POPIA_CONTROLS.filter(function(c){return c.passed;}).length;
+  var gPass=GDPR_CONTROLS.filter(function(c){return c.passed;}).length;
+  var pPct=Math.round((pPass/POPIA_CONTROLS.length)*100);
+  var gPct=Math.round((gPass/GDPR_CONTROLS.length)*100);
+  var oPct=Math.round((pPct+gPct)/2*10)/10;
+
+  var pColor=getScoreColor(pPct);
+  var gColor=getScoreColor(gPct);
+  var oColor=getScoreColor(oPct);
+
+  document.getElementById('popiaScoreVal').textContent=pPct+'%';
+  document.getElementById('popiaScoreVal').style.color=pColor;
+  document.getElementById('popiaRatingLabel').textContent=getRating(pPct);
+  document.getElementById('popiaPassCount').textContent=pPass+' / '+POPIA_CONTROLS.length+' passed';
+  document.getElementById('popiaBar').style.width=pPct+'%';
+  document.getElementById('popiaBar').style.background=pColor;
+  var pArc=document.getElementById('popiaArc');
+  pArc.setAttribute('stroke',pColor);
+  pArc.setAttribute('stroke-dashoffset',Math.round(314-(314*pPct/100)));
+
+  document.getElementById('gdprScoreVal').textContent=gPct+'%';
+  document.getElementById('gdprScoreVal').style.color=gColor;
+  document.getElementById('gdprRatingLabel').textContent=getRating(gPct);
+  document.getElementById('gdprPassCount').textContent=gPass+' / '+GDPR_CONTROLS.length+' passed';
+  document.getElementById('gdprBar').style.width=gPct+'%';
+  document.getElementById('gdprBar').style.background=gColor;
+  var gArc=document.getElementById('gdprArc');
+  gArc.setAttribute('stroke',gColor);
+  gArc.setAttribute('stroke-dashoffset',Math.round(314-(314*gPct/100)));
+
+  var os=document.getElementById('overallScore');
+  os.textContent=oPct+'%';
+  os.style.color=oColor;
+  document.getElementById('overallLabel').textContent=getRating(oPct);
+  document.getElementById('overallBar').style.width=oPct+'%';
+  document.getElementById('overallBar').style.background=oColor;
+}
+
+function renderToggles(controls,containerId,framework){
+  var c=document.getElementById(containerId);
+  c.innerHTML='';
+  controls.forEach(function(ctrl,i){
+    var div=document.createElement('div');
+    div.className='ctrl-item';
+    var toggleId=framework+'-'+i;
+    div.innerHTML=
+      '<label class="toggle">'+
+      '<input type="checkbox" id="'+toggleId+'"'+(ctrl.passed?' checked':'')+'>'+
+      '<span class="toggle-slider"></span>'+
+      '</label>'+
+      '<div class="ctrl-body">'+
+      '<div class="ctrl-ref">'+ctrl.ref+'</div>'+
+      '<div class="ctrl-title">'+ctrl.title+'</div>'+
+      '<div class="ctrl-desc">'+ctrl.desc+'</div>'+
+      '</div>'+
+      '<span class="ctrl-status '+(ctrl.passed?'st-pass':'st-fail')+'" id="status-'+toggleId+'">'+(ctrl.passed?'PASS':'FAIL')+'</span>';
+    c.appendChild(div);
+    document.getElementById(toggleId).addEventListener('change',function(){
+      controls[i].passed=this.checked;
+      var st=document.getElementById('status-'+toggleId);
+      st.className='ctrl-status '+(this.checked?'st-pass':'st-fail');
+      st.textContent=this.checked?'PASS':'FAIL';
+      updateScores();
+    });
+  });
+}
+
+renderToggles(POPIA_CONTROLS,'popiaToggles','popia');
+renderToggles(GDPR_CONTROLS,'gdprToggles','gdpr');
+updateScores();
+
+var TIMELINE=[
+  {date:'2021',title:'Information Regulator begins engaging WhatsApp',desc:'Regulator identifies discrepancy between GDPR and POPIA treatment of SA users.',dot:'#2563eb'},
+  {date:'Apr 2024',title:'Formal compliance assessment launched',desc:'Information Regulator formally investigates WhatsApp SA operations under POPIA.',dot:'#d97706'},
+  {date:'10 Sep 2024',title:'Enforcement notice issued to WhatsApp',desc:'First major tech enforcement notice under POPIA. 7 violations identified. 60-day deadline set.',dot:'#e53e3e'},
+  {date:'10 Nov 2024',title:'WhatsApp compliance deadline',desc:'Deadline to submit compliance report and evidence of remediation to the Information Regulator.',dot:'#e53e3e'},
+  {date:'Apr 2025',title:'Enforcement notice published publicly',desc:'Information Regulator publishes the enforcement notice. Case becomes public record.',dot:'#16a34a'}
+];
+
+var VIOLATIONS=[
+  {ref:'S.8',title:'No lawful basis for processing',desc:'WhatsApp could not demonstrate a lawful basis for processing SA user personal information.'},
+  {ref:'S.9',title:'Excessive data collection',desc:'Collected more personal data than necessary for the stated purpose of providing messaging services.'},
+  {ref:'S.11',title:'Forced and uninformed consent',desc:'SA users had no genuine choice — accepting terms was mandatory to use the service.'},
+  {ref:'S.13',title:'Purpose not clearly stated',desc:'Privacy notices did not adequately explain why SA user data was collected or how it would be used.'},
+  {ref:'S.15',title:'Data used for new purposes',desc:'User data was used for purposes beyond what users originally consented to.'},
+  {ref:'S.17',title:'No processing records',desc:'WhatsApp did not maintain adequate records of its personal information processing activities.'},
+  {ref:'S.19',title:'Inadequate security measures',desc:'Technical and organisational security measures did not meet POPIA requirements for SA users.'}
+];
+
+function buildTimeline(){
+  var c=document.getElementById('enfTimeline');
+  TIMELINE.forEach(function(item,i){
+    var div=document.createElement('div');
+    div.className='timeline-item';
+    div.innerHTML=
+      '<div class="tl-date">'+item.date+'</div>'+
+      '<div class="tl-dot-wrap">'+
+      '<div class="tl-dot2" style="background:'+item.dot+'"></div>'+
+      (i<TIMELINE.length-1?'<div class="tl-line"></div>':'')+
+      '</div>'+
+      '<div class="tl-body">'+
+      '<div class="tl-title2">'+item.title+'</div>'+
+      '<div class="tl-desc2">'+item.desc+'</div>'+
+      '</div>';
+    c.appendChild(div);
+  });
+}
+
+function buildViolations(){
+  var c=document.getElementById('violations');
+  VIOLATIONS.forEach(function(v){
+    var div=document.createElement('div');
+    div.className='violation';
+    div.innerHTML='<div class="vio-ref">'+v.ref+' VIOLATION</div><div class="vio-title">'+v.title+'</div><div class="vio-desc">'+v.desc+'</div>';
+    c.appendChild(div);
+  });
+}
+
+buildTimeline();
+buildViolations();
+</script>
+</body>
+</html>
